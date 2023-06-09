@@ -2,22 +2,43 @@ import styled from "@emotion/styled";
 import PokeNameChip from "../Common/PokeNameChip";
 import PokeMarkChip from "../Common/PokeMarkChip";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  PokemonDetailType,
+  fetchPokemonsDetail,
+} from "../Service/pokemonService";
+
+interface PokeCardProps {
+  name: string;
+}
 
 const TempImgUrl =
   "https://mblogthumb-phinf.pstatic.net/20160722_90/cool911016_1469169937457pEG2Q_JPEG/150519_%C7%C7%C4%AB%C3%F2%C6%E4%C0%CC%C6%DB%C5%E4%C0%CC_%B5%B5%BE%C8_004.jpg?type=w800";
-const PokeCard = () => {
+const PokeCard = (props: PokeCardProps) => {
   const navigate = useNavigate();
+  const [pokemon, setPokemon] = useState<PokemonDetailType | null>(null);
 
   const handleClick = () => {
-    navigate("/pokemon/피카츄");
+    navigate(`/pokemon/${props.name}`);
   };
+
+  useEffect(() => {
+    (async () => {
+      const detail = await fetchPokemonsDetail(props.name);
+      setPokemon(detail);
+    })();
+  }, [props.name]);
+
+  if (!pokemon) {
+    return null;
+  }
   return (
     <Item onClick={handleClick}>
       <Header>
-        <PokeNameChip />
+        <PokeNameChip name={pokemon.name} id={pokemon.id} />
       </Header>
       <Body>
-        <Image src={TempImgUrl} alt="이상해씨 이미지" />
+        <Image src={pokemon.images.dreamWorldFront} alt={pokemon.name} />
       </Body>
       <Footer>
         <PokeMarkChip />
