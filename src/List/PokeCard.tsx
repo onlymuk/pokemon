@@ -7,15 +7,17 @@ import {
   PokemonDetailType,
   fetchPokemonsDetail,
 } from "../Service/pokemonService";
+import { PokeImageSkeleton } from "../Common/PokeImageSkeleton";
+import { useIntersectionObserver } from "react-intersection-observer-hook";
 
 interface PokeCardProps {
   name: string;
 }
 
-const TempImgUrl =
-  "https://mblogthumb-phinf.pstatic.net/20160722_90/cool911016_1469169937457pEG2Q_JPEG/150519_%C7%C7%C4%AB%C3%F2%C6%E4%C0%CC%C6%DB%C5%E4%C0%CC_%B5%B5%BE%C8_004.jpg?type=w800";
 const PokeCard = (props: PokeCardProps) => {
   const navigate = useNavigate();
+  const [ref, { entry }] = useIntersectionObserver();
+  const isVisible = entry && entry.isIntersecting;
   const [pokemon, setPokemon] = useState<PokemonDetailType | null>(null);
 
   const handleClick = () => {
@@ -23,19 +25,37 @@ const PokeCard = (props: PokeCardProps) => {
   };
 
   useEffect(() => {
+    if (!isVisible) {
+      return;
+    }
     (async () => {
       const detail = await fetchPokemonsDetail(props.name);
       setPokemon(detail);
     })();
-  }, [props.name]);
-
+  }, [props.name, isVisible]);
   if (!pokemon) {
-    return null;
+    return (
+      <Item color={`#fff`}>
+        <Header>
+          <PokeNameChip name={"포켓몬"} color={"#ffca09"} id={0} />
+        </Header>
+        <Body>
+          <PokeImageSkeleton />
+        </Body>
+        <Footer>
+          <PokeMarkChip />
+        </Footer>
+      </Item>
+    );
   }
   return (
-    <Item onClick={handleClick}>
+    <Item onClick={handleClick} color={pokemon.color} ref={ref}>
       <Header>
-        <PokeNameChip name={pokemon.name} id={pokemon.id} />
+        <PokeNameChip
+          name={pokemon.koreanName}
+          color={pokemon.color}
+          id={pokemon.id}
+        />
       </Header>
       <Body>
         <Image src={pokemon.images.dreamWorldFront} alt={pokemon.name} />
@@ -47,7 +67,7 @@ const PokeCard = (props: PokeCardProps) => {
   );
 };
 
-const Item = styled.li`
+const Item = styled.li<{ color: string }>`
   border: 1px solid #c0c0c0;
   padding: 8px;
   width: 250px;
@@ -62,7 +82,7 @@ const Item = styled.li`
     transform: scale(1.05);
   }
   &:active {
-    background-color: yellow;
+    background-color: ${(props) => props.color};
     opacity: 0.8;
     transition: background-color 0s;
   }
