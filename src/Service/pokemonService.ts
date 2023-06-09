@@ -1,110 +1,109 @@
-import axios from "axios";
-
+import axios from 'axios';
+import {POKEMON_IMAGE_TYPE} from "../Constant";
 
 const remote = axios.create();
-export interface PokemonListResponseType {
-    count: number,
-    next: string,
-    results: {
-        name: string,
-        url: string,
-    }[]
-}
 
-export  const fetchPokemons = async (nextUrl?:string) => {
-    const requestUrl= nextUrl? nextUrl: "https://pokeapi.co/api/v2/pokemon";
-    const response =  await remote.get<PokemonListResponseType>(requestUrl);
-    return response.data;
-}
-
-export interface PokemonDetailResponseType {
-    id:number,
-    weight: number,
-    height: number,
+export interface PokemonListResponse {
+  count: number,
+  next: string,
+  results: {
     name: string,
-    types: {
-        type: {
-            name: string
-        }
-    }[],
-    sprites: {
-        front_default: string,
-        other: {
-            dream_world: {
-                front_default: string
-            }
-            "official-artwork" : {
-                front_default: string,
-            }
-        }
-    },
-    stats: {
-        base_stat: number,
-        stat : {
-            name: string
-        }
-    }[]
+    url: string
+  }[]
 }
 
-export interface PokemonSpeciesResponseType {
-    color: {
-        name: string
-    },
-    names: {
-        name: string,
-        language: {
-            name: string,
-        }
-    }[]
-}
-
- export interface PokemonDetailType {
-    id:number,
-    weight: number,
-    height: number,
-    name: string,
-    koreanName: string,
-    color: string
-    types: string[],
-    images: {
-        frontDefault: string,
-        dreamWorldFront: string,
-        officialArtworkFront: string,
-    },
-    baseStats: {
-        name: string,
-        value: number,
-    }[]
-}
-
-export const fetchPokemonsDetail = async (name: string):Promise<PokemonDetailType> => {
-    const pokemonDetailUrl = `https://pokeapi.co/api/v2/pokemon/${name}`;
-    const pokemonSpeciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name}`;
-    const response =  await remote.get<PokemonDetailResponseType>(pokemonDetailUrl);
-    const speciesResponse =  await remote.get<PokemonSpeciesResponseType>(pokemonSpeciesUrl);
-    const detail = response.data;
-    const species = speciesResponse.data;
-    return {
-        id: detail.id,
-        name: detail.name,
-        color: species.color.name,
-        koreanName: species.names.find(item => {
-            return item.language.name === "ko"
-        })?.name?? detail.name,
-        height: detail.height/10,
-        weight: detail.weight / 10,
-        types: detail.types.map(item =>item.type.name),
-        images: {
-            frontDefault: detail.sprites.front_default,
-            dreamWorldFront: detail.sprites.other.dream_world.front_default,
-            officialArtworkFront: detail.sprites.other["official-artwork"].front_default,    
-        },
-        baseStats: detail.stats.map(item=>{
-            return {
-                name: item.stat.name,
-                value: item.base_stat,
-            }
-        }),
+export const fetchPokemonsAPI = async (nextUrl?:string) => {
+  const result = await remote.get<PokemonListResponse>(nextUrl ? nextUrl : 'https://pokeapi.co/api/v2/pokemon', {
+    params: {
+      limit: 20
     }
+  })
+  return result.data;
+}
 
+export interface PokemonDetailType {
+  id: number
+  name: string
+  koreanName: string
+  height: number // 미터
+  weight: number // Kg
+  color: string
+  type: string[]
+  images: {
+    frontDefault: string
+    officialArtworkFront: string
+    dreamWorldFront: string
+  },
+  baseStats: {
+    name: string
+    value: number
+  }[]
+}
+
+interface PokemonDetailResponseType {
+  id: number,
+  height: number,
+  weight: number,
+  name: string,
+  types: {
+    slot: 1,
+    type: {
+      name: string
+      url: string
+    }
+  }[],
+  sprites: {
+    front_default: string,
+    other: {
+      'official-artwork': {
+        front_default: string,
+      },
+      dream_world: {
+        front_default: string
+      }
+    }
+  },
+  stats: {
+    base_stat: number,
+    stat: {
+      name: string
+    }
+  }[]
+}
+
+interface PokemonSpeciesResponseType {
+  color: {
+    name: string
+    url: string
+  },
+  names: {
+    name: string
+    language: {
+      name: string
+      url: string
+    }
+  }[]
+}
+
+export const fetchPokemonDetailAPI = async (name:string):Promise<PokemonDetailType> => {
+  const response = await remote.get<PokemonDetailResponseType>(`https://pokeapi.co/api/v2/pokemon/${name}`);
+  const result = await remote.get<PokemonSpeciesResponseType>(`https://pokeapi.co/api/v2/pokemon-species/${name}`);
+  const { data } = response;
+  const data2 = result.data;
+
+  return {
+    id: data.id,
+    name: data.name,
+    height: data.height / 10, // 미터 단위로 변경
+    weight: data.weight / 10, // Kg으로 변경
+    koreanName: result.data.names.find((name) => name.language.name === 'ko')?.name ?? data.name,
+    type: data.types.map(item => item.type.name),
+    color: data2.color.name,
+    baseStats: data.stats.map(item => ({ name: item.stat.name, value: item.base_stat })),
+    images: {
+      [POKEMON_IMAGE_TYPE.FRONT_DEFAULT]: data.sprites.front_default,
+      [POKEMON_IMAGE_TYPE.OFFICIAL_ARTWORK]: data.sprites.other['official-artwork'].front_default,
+      [POKEMON_IMAGE_TYPE.DREAM_WORLD]: data.sprites.other.dream_world.front_default
+    }
+  }
 }

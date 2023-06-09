@@ -1,49 +1,50 @@
-import styled from "@emotion/styled";
+import {useParams} from "react-router-dom";
+import {useEffect} from "react";
 import PokeMarkChip from "../Common/PokeMarkChip";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import {
-  fetchPokemonsDetail,
-  PokemonDetailType,
-} from "../Service/pokemonService";
-import { PokeImageSkeleton } from "../Common/PokeImageSkeleton";
+import styled from "@emotion/styled";
+import {PokeImageSkeleton} from "../Common/PokeImageSkeleton";
+import {useSelector} from "react-redux";
+import {RootState, useAppDispatch} from "../Store";
+import {fetchPokemonDetail} from "../Store/pokemonDetailSlice";
 
 const PokemonDetail = () => {
-  const { name } = useParams();
-  const [pokemon, setPokemon] = useState<PokemonDetailType | null>(null);
+  const { name } = useParams()
+  const imageType = useSelector((state: RootState) => state.imageType.type);
+  const pokemonDetails = useSelector((state: RootState) => state.pokemonDetail.pokemonDetails);
+  const pokemon = name ? pokemonDetails[name] : null
+  const dispatch = useAppDispatch()
 
   useEffect(() => {
-    if (!name) {
+    if(!name) {
       return;
     }
-    (async () => {
-      const detail = await fetchPokemonsDetail(name);
-      setPokemon(detail);
-    })();
-  }, [name]);
 
-  if (!name || !pokemon) {
+    dispatch(fetchPokemonDetail(name))
+  }, [name, dispatch])
+
+  if(!pokemon) {
     return (
       <Container>
         <ImageContainer>
-          <PokeImageSkeleton />
+          <PokeImageSkeleton/>
         </ImageContainer>
-        <Divider></Divider>
-
         <Footer>
-          <PokeMarkChip></PokeMarkChip>
+          <PokeMarkChip/>
         </Footer>
       </Container>
-    );
+    )
   }
+
   return (
     <Container>
       <ImageContainer>
-        <Image src={pokemon.images.dreamWorldFront} alt={pokemon.koreanName} />
+        <a href={pokemon.images[imageType]}>
+          <Image src={pokemon.images[imageType]} alt={pokemon.koreanName}/>
+        </a>
       </ImageContainer>
-      <Divider></Divider>
+      <Divider/>
       <Body>
-        <h2>기본정보</h2>
+        <h2>기본 정보</h2>
         <Table>
           <tbody>
             <TableRow>
@@ -56,99 +57,100 @@ const PokemonDetail = () => {
             </TableRow>
             <TableRow>
               <TableHeader>타입</TableHeader>
-              <td>{pokemon.types.toString()}</td>
+              <td>{pokemon.type.toString()}</td>
             </TableRow>
             <TableRow>
               <TableHeader>키</TableHeader>
-              <td>{pokemon.height}m</td>
+              <td>{pokemon.height} m</td>
             </TableRow>
             <TableRow>
               <TableHeader>몸무게</TableHeader>
-              <td>{pokemon.weight}kg</td>
+              <td>{pokemon.weight} Kg</td>
             </TableRow>
           </tbody>
         </Table>
         <h2>능력치</h2>
         <Table>
           <tbody>
-            {pokemon.baseStats.map((stat) => {
-              return (
-                <TableRow key={stat.name}>
-                  <TableHeader>{stat.name}</TableHeader>
-                  <td>{stat.value}</td>
-                </TableRow>
-              );
-            })}
+          {
+            pokemon.baseStats.map(stat => (
+              <TableRow key={stat.name}>
+                <TableHeader>{stat.name}</TableHeader>
+                <td>{stat.value}</td>
+              </TableRow>
+            ))
+          }
           </tbody>
         </Table>
       </Body>
       <Footer>
-        <PokeMarkChip></PokeMarkChip>
+        <PokeMarkChip/>
       </Footer>
     </Container>
-  );
-};
+  )
+}
 
 const Container = styled.section`
-  border: 1px solid #c0c0c0;
   margin: 16px 32px;
+  border: 1px solid #C0C0C0;
   border-radius: 16px;
-  box-shadow: 1px 1px 3px 1px #c0c0c0;
-`;
+  box-shadow: 1px 1px 3px 1px #C0C0C0;
+`
 
 const ImageContainer = styled.section`
   display: flex;
   flex: 1 1 auto;
   justify-content: center;
   align-items: center;
-  margin: 8px 0;
   min-height: 350px;
-`;
+  margin: 8px 0;
+`
 
 const Image = styled.img`
   width: 350px;
   height: 350px;
-`;
+`
 
 const Divider = styled.hr`
   margin: 32px;
   border-style: none;
-  border-top: 1px dashed #d3d3d3;
-`;
+  border-top: 1px dotted #D3D3D3;
+`
 
 const Body = styled.section`
   margin: 0 32px;
-`;
+`
 
 const Table = styled.table`
   width: 100%;
+  margin: 0 auto 1rem;
   border-collapse: collapse;
   border-spacing: 0;
-  margin: 0 auto 16px;
-  th,
-  td {
+  
+  th, td {
     padding: 6px 12px;
   }
-`;
+`
 
 const TableRow = styled.tr`
   border-width: 1px 0;
   border-style: solid;
-  border: 1px solid #f0f0f0;
-`;
+  border-color: #f0f0f0;
+`
 
 const TableHeader = styled.th`
+  color: #737373;
+  font-size: .875rem;
+  font-weight: normal;
+  text-align: left;
   width: 1px;
   white-space: nowrap;
-  text-align: center;
-  font-weight: normal;
-  font-size: 14px;
-  color: #a0a0a0;
-`;
+`
 
 const Footer = styled.section`
   display: flex;
   flex-direction: row;
   margin: 32px 16px;
-`;
-export default PokemonDetail;
+`
+
+export default PokemonDetail

@@ -1,113 +1,116 @@
 import styled from "@emotion/styled";
+import {useEffect} from "react";
+import {useIntersectionObserver} from "react-intersection-observer-hook";
+import {useNavigate} from "react-router-dom";
 import PokeNameChip from "../Common/PokeNameChip";
 import PokeMarkChip from "../Common/PokeMarkChip";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import {
-  PokemonDetailType,
-  fetchPokemonsDetail,
-} from "../Service/pokemonService";
-import { PokeImageSkeleton } from "../Common/PokeImageSkeleton";
-import { useIntersectionObserver } from "react-intersection-observer-hook";
+import {PokeImageSkeleton} from "../Common/PokeImageSkeleton";
+import {useSelector} from "react-redux";
+import {RootState, useAppDispatch} from "../Store";
+import {fetchPokemonDetail} from "../Store/pokemonDetailSlice";
 
 interface PokeCardProps {
-  name: string;
+  resource: string
+  name: string
 }
 
-const PokeCard = (props: PokeCardProps) => {
+const PokeCard = (props:PokeCardProps) => {
   const navigate = useNavigate();
+  const imageType = useSelector((state: RootState) => state.imageType.type);
   const [ref, { entry }] = useIntersectionObserver();
   const isVisible = entry && entry.isIntersecting;
-  const [pokemon, setPokemon] = useState<PokemonDetailType | null>(null);
-
-  const handleClick = () => {
-    navigate(`/pokemon/${props.name}`);
-  };
+  const pokemonDetails = useSelector((state: RootState) => state.pokemonDetail.pokemonDetails);
+  const pokemon = pokemonDetails[props.name]
+  const dispatch = useAppDispatch()
 
   useEffect(() => {
-    if (!isVisible) {
+    if(!isVisible) {
       return;
     }
-    (async () => {
-      const detail = await fetchPokemonsDetail(props.name);
-      setPokemon(detail);
-    })();
-  }, [props.name, isVisible]);
-  if (!pokemon) {
+
+    dispatch(fetchPokemonDetail(props.name))
+  }, [dispatch, props.name, isVisible])
+
+  const handleClick = () => {
+    navigate(`/pokemon/${pokemon?.name}`)
+  }
+
+  if(!pokemon) {
     return (
-      <Item color={`#fff`}>
+      <Container ref={ref} color={'#32CD32'}>
         <Header>
-          <PokeNameChip name={"포켓몬"} color={"#ffca09"} id={0} />
+          <PokeNameChip name={'포켓몬'} id={0} numberColor={'#32CD32'} />
         </Header>
         <Body>
-          <PokeImageSkeleton />
+          <PokeImageSkeleton/>
         </Body>
         <Footer>
-          <PokeMarkChip />
+          <PokeMarkChip/>
         </Footer>
-      </Item>
-    );
+      </Container>
+    )
   }
+
   return (
-    <Item onClick={handleClick} color={pokemon.color} ref={ref}>
+    <Container ref={ref} onClick={handleClick} color={pokemon.color}>
       <Header>
-        <PokeNameChip
-          name={pokemon.koreanName}
-          color={pokemon.color}
-          id={pokemon.id}
-        />
+        <PokeNameChip name={pokemon.koreanName} numberColor={pokemon.color} id={pokemon.id}/>
       </Header>
       <Body>
-        <Image src={pokemon.images.dreamWorldFront} alt={pokemon.name} />
+        <Image src={pokemon.images[imageType]} alt={pokemon.koreanName}/>
       </Body>
       <Footer>
-        <PokeMarkChip />
+        <PokeMarkChip/>
       </Footer>
-    </Item>
+    </Container>
   );
-};
+}
 
-const Item = styled.li<{ color: string }>`
-  border: 1px solid #c0c0c0;
-  padding: 8px;
-  width: 250px;
-  height: 300px;
-  box-shadow: 1px 1px 3px 1px #c0c0c0;
+const Container = styled.li<{ color: string }>`
   display: flex;
   flex-direction: column;
+  width: 250px;
+  height: 300px;
+  padding: 6px;
+  border: 1px solid #C0C0C0;
+  box-shadow: 1px 1px 3px 1px #C0C0C0;
+  cursor: pointer;
   transition: transform 0.3s ease-in-out;
 
-  cursor: pointer;
   &:hover {
-    transform: scale(1.05);
+    transform:scale(1.1);
   }
+  
   &:active {
-    background-color: ${(props) => props.color};
+    background-color: ${props => props.color};
     opacity: 0.8;
     transition: background-color 0s;
   }
-`;
+`
 
 const Header = styled.section`
   display: flex;
   flex-direction: row;
   margin: 8px 0;
-`;
+`
 
 const Body = styled.section`
   display: flex;
+  flex: 1 1 auto;
   justify-content: center;
   align-items: center;
   margin: 8px 0;
-  flex: 1 1 auto;
-`;
+`
+
+const Image = styled.img`
+  width: 180px;
+  height: 180px;
+`
+
 const Footer = styled.section`
   display: flex;
   flex-direction: row;
   margin: 8px 0;
-`;
-const Image = styled.img`
-  width: 180px;
-  height: 180px;
-`;
-export default PokeCard;
+`
+
+export default PokeCard

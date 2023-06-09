@@ -1,14 +1,20 @@
-import React from "react";
+import React from 'react';
+import PageNavigator from "./PageNavigator";
+import {BrowserRouter} from "react-router-dom";
 import PageHeader from "./Common/PageHeader";
-import { BrowserRouter } from "react-router-dom";
-import PageNavigator from "./PageNavgation";
+import {store} from "./Store";
+import {Provider} from "react-redux";
 
 function App() {
   return (
-    <BrowserRouter>
-      <PageHeader />
-      <PageNavigator />
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <main>
+          <PageHeader/>
+          <PageNavigator/>
+        </main>
+      </BrowserRouter>
+    </Provider>
   );
 }
 
